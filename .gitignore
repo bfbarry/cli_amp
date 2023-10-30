@@ -1,1 +1,7 @@
+.vscode
 lib
+cli_amp
+*.out
+*.o
+*.so
+*.a
