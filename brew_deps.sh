@@ -1,0 +1,1 @@
+brew install cmake pulseaudio libsoundio jack
