@@ -1,3 +1,9 @@
+# TODO 
+- distortion
+- EQ
+- reverb
+
+
 # notes
 - initally used the portaudio build from host website, but this relies on  "_Gestalt"
 - For VsCode, add `/opt/homebrew/include` to C/C++ Edit configurations (UI)

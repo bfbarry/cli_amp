@@ -3,17 +3,14 @@
 #include <cstring>
 #include <cmath>
 #include <portaudio.h>
-#include <string>
 #include <iostream>
 #include <signal.h>
+#include "audio_io.h"
 
 
 #define SAMPLE_RATE 44100
-#define FRAMES_PER_BUFFER 128 //can also be 1024.  Larger means more data, but less callbacks.  
-//TODO: select options for DEVICE_IN and DEVICE_OUT, get headphones
-#define DEVICE_IN "Steinberg UR22C"
-#define DEVICE_OUT "MacBook Pro Speakers"
-#define NUMCHAN 2
+#define FRAMES_PER_BUFFER 64 //can also be 1024.  Larger means more data, but less callbacks.  
+#define NUMCHAN 2 // TODO: get from config
 volatile sig_atomic_t sigint_flag = 0;
 
 static void checkErr(PaError err) {
@@ -35,7 +32,7 @@ inline float max(float a, float b) {
 }
 
 
-static int patestCallback(
+static int paCallback(
     const void* inputBuffer, void* outputBuffer, unsigned long framesPerBuffer,
     const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags,
     void* userData
@@ -58,23 +55,24 @@ static int patestCallback(
         vol_l = max(vol_l, std::abs(in[i]));
         vol_r = max(vol_r, std::abs(in[i+1]));
         out[i] = in[i];
-        out[i+1] = in[i+1];
+        printf("[%f, %f] \n", in[i], in[i+1]);
+        out[i+1] = in[i];
     }
 
-    for (int i = 0; i < dispSize; i++) {
-        float barProportion = i / (float)dispSize;
-        if (barProportion <= vol_l && barProportion <= vol_r) {
-            printf("█");
-        } else if (barProportion <= vol_l) {
-            printf("▀");
-        } else if (barProportion <= vol_r) {
-            printf("▄");
-        } else {
-            printf(" ");
-        }
-    }
+    // for (int i = 0; i < dispSize; i++) {
+    //     float barProportion = i / (float)dispSize;
+    //     if (barProportion <= vol_l && barProportion <= vol_r) {
+    //         printf("█");
+    //     } else if (barProportion <= vol_l) {
+    //         printf("▀");
+    //     } else if (barProportion <= vol_r) {
+    //         printf("▄");
+    //     } else {
+    //         printf(" ");
+    //     }
+    // }
 
-    fflush(stdout);
+    // fflush(stdout);
     return EXIT_SUCCESS;
 }
 
@@ -82,70 +80,17 @@ int main() {
     PaError err;
     err = Pa_Initialize();
     checkErr(err);
-
-    int numDevices = Pa_GetDeviceCount();
-    printf("total devices: %i\n", numDevices);
-    if (numDevices < 0) {
-        printf("Error getting device count.\n");
-        exit(EXIT_FAILURE);
-    } else if (numDevices == 0) {
-        printf("No devices.\n");
-        exit(EXIT_SUCCESS);
-    }
-
-    const PaDeviceInfo* deviceInfo; // can't modify the obj but can modify the pointer
-    int device_in;
-    int device_out;
-    // std::string device_name = "Steinberg UR22C";    
-    for (int i = 0; i < numDevices; i++) {
-        deviceInfo = Pa_GetDeviceInfo(i);
-        //TODO make func to print this info
-        if (strcmp(deviceInfo->name, DEVICE_IN) == 0) {
-            device_in = i;
-            std::string device_name = deviceInfo->name;
-            printf("Input device # %i\n", i);
-            printf("  name %s\n", deviceInfo->name);
-            printf("  maxInputChannels %i\n", deviceInfo->maxInputChannels);
-            printf("  maxOutputChannels %i\n", deviceInfo->maxOutputChannels);
-            printf("  defaultSampleRate %f \n", deviceInfo->defaultSampleRate);
-            printf("\n"); 
-        }
-        else if (strcmp(deviceInfo->name, DEVICE_OUT) == 0) {
-            device_out = i;
-            std::string device_name = deviceInfo->name;
-            printf("Input device # %i\n", i);
-            printf("  name %s\n", deviceInfo->name);
-            printf("  maxInputChannels %i\n", deviceInfo->maxInputChannels);
-            printf("  maxOutputChannels %i\n", deviceInfo->maxOutputChannels);
-            printf("  defaultSampleRate %f \n", deviceInfo->defaultSampleRate);
-            printf("\n"); 
-        }
-    }
-
-    // equivalent of memset(&inputparams, 0, sizeof(inputparams)), structs don't initialize values so do this to be safe
-    PaStreamParameters inputParams{};
-    PaStreamParameters outputParams{};
-    inputParams.channelCount = 2;
-    inputParams.device = device_in;
-    inputParams.hostApiSpecificStreamInfo = NULL; 
-    inputParams.sampleFormat = paFloat32;
-    inputParams.suggestedLatency = Pa_GetDeviceInfo(device_in)->defaultLowInputLatency; 
-
-    outputParams.channelCount = 2; // just can't be 0
-    outputParams.device = device_out;
-    outputParams.hostApiSpecificStreamInfo = NULL; 
-    outputParams.sampleFormat = paFloat32;
-    outputParams.suggestedLatency = Pa_GetDeviceInfo(device_out)->defaultLowOutputLatency;
+    setUpDevicesOut devices = setUpDevices();
 
     PaStream* stream;
     err = Pa_OpenStream(
         &stream,
-        &inputParams,
-        &outputParams,
+        &devices.inputParams,
+        &devices.outputParams,
         SAMPLE_RATE,
         FRAMES_PER_BUFFER,
         paNoFlag,
-        patestCallback,
+        paCallback,
         NULL
     );
     checkErr(err);

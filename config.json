@@ -1,0 +1,9 @@
+{
+    "io" : {
+        "input_device": "Steinberg UR22C",
+        "output_device": "External Headphones"
+    },
+    "dsp": {
+        "distortion": null
+    }
+}

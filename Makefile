@@ -1,11 +1,17 @@
 EXEC = cli_amp
-CMAKE = -I/opt/homebrew/include -L/opt/homebrew/lib -lportaudio -lsoundio -ljack
+CMAKE = -I/opt/homebrew/include -L/opt/homebrew/lib -lportaudio -lsoundio -ljack -lsimdjson
 #-framework AudioUnit -framework AudioToolbox -framework CoreAudio -framework CoreFoundation
 
 
-$(EXEC): main.cpp
+$(EXEC): main.o audio_io.o
 	g++ -std=c++14 -stdlib=libc++ -o $@ $^ $(CMAKE)
-# $@ substitutes $(EXEC), $^ substitutes main.cpp
+# $@ substitutes $(EXEC), $^ substitutes inputs
+
+main.o: main.cpp
+	g++ -std=c++14 -stdlib=libc++ -c $^ $(CMAKE)
+
+audio_io.o: audio_io.cpp
+	g++ -std=c++14 -stdlib=libc++ -c $^ $(CMAKE)
 
 install-deps:
 	brew install cmake portaudio pulseaudio libsoundio jack
@@ -16,5 +22,5 @@ uninstall-deps:
 .PHONY: uninstall-deps
 
 clean:
-	rm -f $(EXEC)
+	rm -f $(EXEC) *.o
 .PHONY: clean
