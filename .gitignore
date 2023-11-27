@@ -6,3 +6,4 @@ cli_amp
 *.so
 *.a
 *.json
+.DS_Store
