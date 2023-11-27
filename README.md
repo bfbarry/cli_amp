@@ -1,7 +1,8 @@
 # TODO 
-- distortion
 - EQ
+- distortion
 - reverb
+- cellular automaton based psychedelic visualizer 
 
 
 # notes

@@ -2,9 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
-#include <simdjson.h>
+#include <fstream>
+#include <nlohmann/json.hpp>
 #include <iostream>
 #include "audio_io.h"
+
 
 void printDeviceInfo(DeviceInfoDict deviceInfoDict) {
     printf("  maxInputChannels %i\n", deviceInfoDict.maxInputChannels);
@@ -52,32 +54,44 @@ setUpDevicesOut setUpDevices() {
 
 
     // read config.json
-    simdjson::ondemand::parser parser;
-    simdjson::padded_string json = simdjson::padded_string::load("config.json");
-    simdjson::ondemand::document config = parser.iterate(json);
-    std::string_view input_device_name_view = config["io"]["input_device"];
-    std::string input_device_name(input_device_name_view);
-    std::string_view output_device_name_view = config["io"]["output_device"];
-    std::string output_device_name(output_device_name_view);
- 
+    nlohmann::json config;
 
+    std::ifstream input_file("config.json");
+    if (input_file.is_open()) {
+        input_file >> config;
+    }
+    std::string input_device_name = config["io"]["input_device"];
+    std::string output_device_name = config["io"]["output_device"];
+ 
+    bool configChanged = false;
     DeviceTable deviceTable = getDeviceInfo(numDevices);
-   if (input_device_name.empty() && output_device_name.empty()) {
+    if (input_device_name.empty() && output_device_name.empty()) {
         printAllDeviceInfo(deviceTable);
         printf("Enter input device name");
         std::getline(std::cin, input_device_name);
         printf("Enter output device name");
         std::getline(std::cin, output_device_name);
+        configChanged = true;
     } else if (input_device_name.empty()) {
         printAllDeviceInfo(deviceTable);
         printf("Enter input device name");
         std::getline(std::cin, input_device_name);
+        configChanged = true;
     } else if (output_device_name.empty()) {
         printAllDeviceInfo(deviceTable);
         printf("Enter output device name");
         std::getline(std::cin, output_device_name);
+        configChanged = true;
     }
 
+    if (configChanged) {
+        config["io"]["input_device"] = input_device_name;
+        config["io"]["output_device"] = output_device_name;
+        std::ofstream output_file("config.json");
+        if (output_file.is_open()) {
+            output_file << config.dump(4);
+        }
+    }
     int input_device_id;
     int output_device_id;
     input_device_id = deviceTable[input_device_name].id;

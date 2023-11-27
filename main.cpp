@@ -55,24 +55,24 @@ static int paCallback(
         vol_l = max(vol_l, std::abs(in[i]));
         vol_r = max(vol_r, std::abs(in[i+1]));
         out[i] = in[i];
-        printf("[%f, %f] \n", in[i], in[i+1]);
+        // printf("[%f, %f], \n", in[i], in[i+1]);
         out[i+1] = in[i];
     }
 
-    // for (int i = 0; i < dispSize; i++) {
-    //     float barProportion = i / (float)dispSize;
-    //     if (barProportion <= vol_l && barProportion <= vol_r) {
-    //         printf("█");
-    //     } else if (barProportion <= vol_l) {
-    //         printf("▀");
-    //     } else if (barProportion <= vol_r) {
-    //         printf("▄");
-    //     } else {
-    //         printf(" ");
-    //     }
-    // }
+    for (int i = 0; i < dispSize; i++) {
+        float barProportion = i / (float)dispSize;
+        if (barProportion <= vol_l && barProportion <= vol_r) {
+            printf("█");
+        } else if (barProportion <= vol_l) {
+            printf("▀");
+        } else if (barProportion <= vol_r) {
+            printf("▄");
+        } else {
+            printf(" ");
+        }
+    }
 
-    // fflush(stdout);
+    fflush(stdout);
     return EXIT_SUCCESS;
 }
 

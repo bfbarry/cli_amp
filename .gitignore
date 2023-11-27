@@ -5,3 +5,4 @@ cli_amp
 *.o
 *.so
 *.a
+*.json
