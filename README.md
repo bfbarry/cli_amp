@@ -1,6 +1,7 @@
 # TODO 
 - EQ
 - distortion
+- Tests
 - reverb
 - cellular automaton based psychedelic visualizer 
 
