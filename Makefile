@@ -3,7 +3,7 @@ CMAKE = -I/opt/homebrew/include -L/opt/homebrew/lib -lportaudio -lsoundio -ljack
 #-framework AudioUnit -framework AudioToolbox -framework CoreAudio -framework CoreFoundation
 
 
-$(EXEC): main.o audio_io.o
+$(EXEC): main.o audio_io.o filter.o
 	g++ -std=c++14 -stdlib=libc++ -o $@ $^ $(CMAKE)
 # $@ substitutes $(EXEC), $^ substitutes inputs
 
@@ -11,6 +11,9 @@ main.o: main.cpp
 	g++ -std=c++14 -stdlib=libc++ -c $^ $(CMAKE)
 
 audio_io.o: audio_io.cpp
+	g++ -std=c++14 -stdlib=libc++ -c $^ $(CMAKE)
+
+filter.o: filter.cpp
 	g++ -std=c++14 -stdlib=libc++ -c $^ $(CMAKE)
 
 install-deps:

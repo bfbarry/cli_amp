@@ -6,11 +6,13 @@
 #include <iostream>
 #include <signal.h>
 #include "audio_io.h"
-
+#include "filter.h"
 
 #define SAMPLE_RATE 44100
 #define FRAMES_PER_BUFFER 64 //can also be 1024.  Larger means more data, but less callbacks.  
 #define NUMCHAN 2 // TODO: get from config
+const float DEV_FC = 400;
+const float DEV_GAIN = 2;
 volatile sig_atomic_t sigint_flag = 0;
 
 static void checkErr(PaError err) {
@@ -32,12 +34,13 @@ inline float max(float a, float b) {
 }
 
 
-static int paCallback(
+static int paCallback( // TODO review why these are void*
     const void* inputBuffer, void* outputBuffer, unsigned long framesPerBuffer,
     const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags,
     void* userData
 ) {
-
+    // filters
+    ModifiedBiquad *low_shelf_filter = (ModifiedBiquad*)userData;
     float* in = (float*)inputBuffer;
     float* out = (float*)outputBuffer;
     // (void)outputBuffer;
@@ -54,9 +57,11 @@ static int paCallback(
     for (unsigned long i = 0; i < framesPerBuffer*2; i +=2) {
         vol_l = max(vol_l, std::abs(in[i]));
         vol_r = max(vol_r, std::abs(in[i+1]));
-        out[i] = in[i];
+        low_shelf_filter->setParameters(DEV_FC, DEV_GAIN);
+        float filtered = low_shelf_filter->filter(in[i]);
+        out[i] = filtered;
         // printf("[%f, %f], \n", in[i], in[i+1]);
-        out[i+1] = in[i];
+        out[i+1] = filtered;
     }
 
     for (int i = 0; i < dispSize; i++) {
@@ -77,6 +82,8 @@ static int paCallback(
 }
 
 int main() {
+    //filters
+    ModifiedBiquad *low_shelf_filter = new ModifiedBiquad(low_shelf);
     PaError err;
     err = Pa_Initialize();
     checkErr(err);
@@ -91,7 +98,7 @@ int main() {
         FRAMES_PER_BUFFER,
         paNoFlag,
         paCallback,
-        NULL
+        low_shelf_filter
     );
     checkErr(err);
 
@@ -111,5 +118,6 @@ int main() {
     err = Pa_Terminate();
     checkErr(err);
     printf("Program stopped.\n");
+    delete low_shelf_filter;
     return EXIT_SUCCESS;
 }
