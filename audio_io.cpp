@@ -52,7 +52,6 @@ setUpDevicesOut setUpDevices() {
         exit(EXIT_SUCCESS);
     }
 
-
     // read config.json
     nlohmann::json config;
 

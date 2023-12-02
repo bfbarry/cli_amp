@@ -11,8 +11,7 @@
 #define SAMPLE_RATE 44100
 #define FRAMES_PER_BUFFER 64 //can also be 1024.  Larger means more data, but less callbacks.  
 #define NUMCHAN 2 // TODO: get from config
-const float DEV_FC = 400;
-const float DEV_GAIN = 2;
+const float DEV_GAIN = -12;
 volatile sig_atomic_t sigint_flag = 0;
 
 static void checkErr(PaError err) {
@@ -54,26 +53,21 @@ static int paCallback( // TODO review why these are void*
     float vol_l = 0;
     float vol_r = 0;
 
-    for (unsigned long i = 0; i < framesPerBuffer*2; i +=2) {
+    for (unsigned long i = 0; i < framesPerBuffer*2; i += 2) {
         vol_l = max(vol_l, std::abs(in[i]));
         vol_r = max(vol_r, std::abs(in[i+1]));
-        low_shelf_filter->setParameters(DEV_FC, DEV_GAIN);
+        low_shelf_filter->setParameters(DEV_GAIN);
         float filtered = low_shelf_filter->filter(in[i]);
         out[i] = filtered;
-        // printf("[%f, %f], \n", in[i], in[i+1]);
         out[i+1] = filtered;
+        // out[i] = in[i];
+        // out[i+1] = in[i];
     }
 
     for (int i = 0; i < dispSize; i++) {
         float barProportion = i / (float)dispSize;
-        if (barProportion <= vol_l && barProportion <= vol_r) {
+        if (barProportion <= vol_l) {
             printf("█");
-        } else if (barProportion <= vol_l) {
-            printf("▀");
-        } else if (barProportion <= vol_r) {
-            printf("▄");
-        } else {
-            printf(" ");
         }
     }
 
@@ -84,6 +78,8 @@ static int paCallback( // TODO review why these are void*
 int main() {
     //filters
     ModifiedBiquad *low_shelf_filter = new ModifiedBiquad(low_shelf);
+    ModifiedBiquad *high_shelf_filter = new ModifiedBiquad(high_shelf);
+    ModifiedBiquad *peaking_filter = new ModifiedBiquad(peaking);
     PaError err;
     err = Pa_Initialize();
     checkErr(err);

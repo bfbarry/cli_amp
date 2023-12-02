@@ -12,7 +12,7 @@ typedef struct Transfer_coefficients {
     float d0;
 } Transfer_coefficients;
 
-enum FilterType { low_shelf, high_shelf, peak };
+enum FilterType { low_shelf, high_shelf, peaking };
 
 class ModifiedBiquad {
     private:
@@ -32,5 +32,5 @@ class ModifiedBiquad {
     public:
         ModifiedBiquad(FilterType filterType);
         float filter(float xn);
-        void setParameters(float fc, float gain);
+        void setParameters(float gain);
 };
