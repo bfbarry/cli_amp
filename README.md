@@ -5,7 +5,9 @@
 - reverb
 - cellular automaton based psychedelic visualizer 
 
-
+# troubleshooting
+- sometimes audio on Mac OS is keeping data in the cache even though I am using the portaudio cleanup pattern
+  - in this case `$ sudo killall coreaudiod` seems to help
 # notes
 - initally used the portaudio build from host website, but this relies on  "_Gestalt"
 - For VsCode, add `/opt/homebrew/include` to C/C++ Edit configurations (UI)

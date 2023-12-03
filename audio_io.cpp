@@ -42,7 +42,17 @@ DeviceTable getDeviceInfo(int numDevices) {
     return deviceTable;
 }
 
-setUpDevicesOut setUpDevices() {
+nlohmann::json readConfig() {
+    nlohmann::json config;
+
+    std::ifstream input_file("config.json");
+    if (input_file.is_open()) {
+        input_file >> config;
+    }
+    return config;
+};
+
+setUpDevicesOut setUpDevices(nlohmann::json config) {
     int numDevices = Pa_GetDeviceCount();
     if (numDevices < 0) {
         printf("Error getting device count.\n");
@@ -52,13 +62,6 @@ setUpDevicesOut setUpDevices() {
         exit(EXIT_SUCCESS);
     }
 
-    // read config.json
-    nlohmann::json config;
-
-    std::ifstream input_file("config.json");
-    if (input_file.is_open()) {
-        input_file >> config;
-    }
     std::string input_device_name = config["io"]["input_device"];
     std::string output_device_name = config["io"]["output_device"];
  

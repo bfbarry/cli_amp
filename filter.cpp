@@ -3,7 +3,7 @@
 #include <cmath>
 #include <stdexcept>
 
-ModifiedBiquad::ModifiedBiquad(FilterType filterType): type(filterType) {
+ModifiedBiquad::ModifiedBiquad(ModifiedBiquadFilterType filterType): type(filterType) {
     std::fill(std::begin(this->x_cache), std::end(this->x_cache), 0.0f);
 };
 
@@ -118,16 +118,50 @@ void ModifiedBiquad::setParameters(float gain) {
     switch(this->type) {
         case low_shelf:
             this->fc = 100.;
-            set_coeffs_first_order_low_shelf();
+            this->set_coeffs_first_order_low_shelf();
             break;
         case high_shelf:
             this->fc = 750.;
-            set_coeffs_first_order_high_shelf();
+            this->set_coeffs_first_order_high_shelf();
             break;
         case peaking:
             this->fc = 3000.;
-            set_coeffs_second_order_constant_peaking();
+            this->set_coeffs_second_order_constant_peaking();
             break;
     };
 };
 
+Distortion::Distortion(DistortionFilterType filterType): type(filterType) {
+
+};
+
+void Distortion::setParameters(float gain) {
+    if (gain < -12. || gain > 12) {
+        throw std::invalid_argument("gain must be in [-12, 12]");
+    }
+    this->gain = gain;
+};
+
+float Distortion::filter(float xn) {
+    float sample_out;
+    switch(this->type) {
+        case exponential:
+            sample_out = explonential_filter(xn);
+            break;
+    };
+    return sample_out;
+};
+
+float Distortion::explonential_filter(float xn) {
+    float yn;
+    float C = this->gain;
+    if (C == 0.) {
+        return xn;
+    }
+    if (xn > 0) {
+        yn = 1- exp(C*-xn);
+    } else {
+        yn = -1 + exp(C*-xn);
+    }
+    return yn;
+};

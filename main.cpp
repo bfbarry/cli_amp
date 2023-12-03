@@ -5,6 +5,7 @@
 #include <portaudio.h>
 #include <iostream>
 #include <signal.h>
+#include <nlohmann/json.hpp>
 #include "audio_io.h"
 #include "filter.h"
 
@@ -38,8 +39,17 @@ static int paCallback( // TODO review why these are void*
     const PaStreamCallbackTimeInfo* timeInfo, PaStreamCallbackFlags statusFlags,
     void* userData
 ) {
+    DspCallbackVessel* dsp_vessel = (DspCallbackVessel*)userData;
+
     // filters
-    ModifiedBiquad *low_shelf_filter = (ModifiedBiquad*)userData;
+    ModifiedBiquad *low_shelf_filter = dsp_vessel->low_shelf_filter;
+    ModifiedBiquad *high_shelf_filter = dsp_vessel->high_shelf_filter;
+    ModifiedBiquad *peaking_filter = dsp_vessel->peaking_filter;
+    Distortion *distortion_filter = dsp_vessel->distortion_filter;
+    low_shelf_filter->setParameters(dsp_vessel->low_shelf_gain);
+    high_shelf_filter->setParameters(dsp_vessel->high_shelf_gain);
+    peaking_filter->setParameters(dsp_vessel->peaking_gain);
+    distortion_filter->setParameters(dsp_vessel->distortion_gain);
     float* in = (float*)inputBuffer;
     float* out = (float*)outputBuffer;
     // (void)outputBuffer;
@@ -56,18 +66,20 @@ static int paCallback( // TODO review why these are void*
     for (unsigned long i = 0; i < framesPerBuffer*2; i += 2) {
         vol_l = max(vol_l, std::abs(in[i]));
         vol_r = max(vol_r, std::abs(in[i+1]));
-        low_shelf_filter->setParameters(DEV_GAIN);
         float filtered = low_shelf_filter->filter(in[i]);
+        filtered       = high_shelf_filter->filter(filtered);
+        filtered       = peaking_filter->filter(filtered);
+        filtered       = distortion_filter->filter(filtered); 
         out[i] = filtered;
         out[i+1] = filtered;
-        // out[i] = in[i];
-        // out[i+1] = in[i];
     }
 
     for (int i = 0; i < dispSize; i++) {
         float barProportion = i / (float)dispSize;
         if (barProportion <= vol_l) {
             printf("█");
+        } else {
+            printf(" ");
         }
     }
 
@@ -80,10 +92,22 @@ int main() {
     ModifiedBiquad *low_shelf_filter = new ModifiedBiquad(low_shelf);
     ModifiedBiquad *high_shelf_filter = new ModifiedBiquad(high_shelf);
     ModifiedBiquad *peaking_filter = new ModifiedBiquad(peaking);
+    Distortion *distortion_filter = new Distortion(exponential);
+
+    nlohmann::json config = readConfig();
+    DspCallbackVessel dsp_vessel;
+    dsp_vessel.low_shelf_filter = low_shelf_filter;
+    dsp_vessel.high_shelf_filter = high_shelf_filter;
+    dsp_vessel.peaking_filter = peaking_filter;
+    dsp_vessel.distortion_filter = distortion_filter;
+    dsp_vessel.low_shelf_gain = config["dsp"]["bass"]["gain"];
+    dsp_vessel.high_shelf_gain = config["dsp"]["middle"]["gain"];
+    dsp_vessel.peaking_gain = config["dsp"]["treble"]["gain"];
+    dsp_vessel.distortion_gain = config["dsp"]["distortion"]["gain"];
     PaError err;
     err = Pa_Initialize();
     checkErr(err);
-    setUpDevicesOut devices = setUpDevices();
+    setUpDevicesOut devices = setUpDevices(config);
 
     PaStream* stream;
     err = Pa_OpenStream(
@@ -94,7 +118,7 @@ int main() {
         FRAMES_PER_BUFFER,
         paNoFlag,
         paCallback,
-        low_shelf_filter
+        &dsp_vessel
     );
     checkErr(err);
 
@@ -115,5 +139,7 @@ int main() {
     checkErr(err);
     printf("Program stopped.\n");
     delete low_shelf_filter;
+    delete high_shelf_filter;
+    delete peaking_filter;
     return EXIT_SUCCESS;
 }

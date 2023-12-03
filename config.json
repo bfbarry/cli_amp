@@ -1,9 +1,9 @@
 {
     "dsp": {
-        "distortion": null,
-        "bass": {"gain": 12},
-        "mid": {"gain": 12},
-        "treble": {"gain": 12}
+        "bass": {"gain": 6},
+        "middle": {"gain": 0},
+        "treble": {"gain": 6},
+        "distortion": {"gain": 0.6}
     },
     "io": {
         "input_device": "Steinberg UR22C",
