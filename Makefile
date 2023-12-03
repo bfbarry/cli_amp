@@ -1,20 +1,21 @@
+SRC_DIR := src
+OBJ_DIR := build
+CC := g++ -std=c++14 -stdlib=libc++
+SRC := $(wildcard $(SRC_DIR)/*.cpp)
+OBJ := $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 EXEC = cli_amp
 CMAKE = -I/opt/homebrew/include -L/opt/homebrew/lib -lportaudio -lsoundio -ljack
 #-framework AudioUnit -framework AudioToolbox -framework CoreAudio -framework CoreFoundation
 
 
-$(EXEC): main.o audio_io.o filter.o
-	g++ -std=c++14 -stdlib=libc++ -o $@ $^ $(CMAKE)
-# $@ substitutes $(EXEC), $^ substitutes inputs
+$(EXEC): $(OBJ)
+	$(CC) -o $@ $^ $(CMAKE)
 
-main.o: main.cpp
-	g++ -std=c++14 -stdlib=libc++ -c $^ $(CMAKE)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
+	$(CC) -o $@ -c $^ $(CMAKE)
 
-audio_io.o: audio_io.cpp
-	g++ -std=c++14 -stdlib=libc++ -c $^ $(CMAKE)
-
-filter.o: filter.cpp
-	g++ -std=c++14 -stdlib=libc++ -c $^ $(CMAKE)
+$(OBJ_DIR):
+	mkdir -p $@
 
 install-deps:
 	brew install cmake portaudio pulseaudio libsoundio jack nlohmann-json

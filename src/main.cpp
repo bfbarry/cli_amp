@@ -141,5 +141,6 @@ int main() {
     delete low_shelf_filter;
     delete high_shelf_filter;
     delete peaking_filter;
+    delete distortion_filter;
     return EXIT_SUCCESS;
 }

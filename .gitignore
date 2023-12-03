@@ -7,3 +7,4 @@ cli_amp
 *.a
 *.json
 .DS_Store
+build

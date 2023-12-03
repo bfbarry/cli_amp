@@ -64,7 +64,7 @@ setUpDevicesOut setUpDevices(nlohmann::json config) {
 
     std::string input_device_name = config["io"]["input_device"];
     std::string output_device_name = config["io"]["output_device"];
- 
+    // TODO: if io isn't connected currently raises PortAudio error: Invalid number of channels 
     bool configChanged = false;
     DeviceTable deviceTable = getDeviceInfo(numDevices);
     if (input_device_name.empty() && output_device_name.empty()) {

@@ -153,6 +153,7 @@ float Distortion::filter(float xn) {
 };
 
 float Distortion::explonential_filter(float xn) {
+    // thanks to https://dsp.stackexchange.com/questions/13142/digital-distortion-effect-algorithm
     float yn;
     float C = this->gain;
     if (C == 0.) {
